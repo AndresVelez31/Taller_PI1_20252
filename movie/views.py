@@ -4,6 +4,10 @@ import io
 import urllib, base64
 from django.shortcuts import render
 from django.http import HttpResponse
+from openai import OpenAI
+import numpy as np
+import os
+from dotenv import load_dotenv
 
 from .models import Movie
 
@@ -95,3 +99,61 @@ def statistics_view(request):
 def signup(request):
     email = request.GET.get('email')
     return render(request, 'signup.html', {'email': email})
+
+
+def cosine_similarity(a, b):
+    """Calcula la similitud de coseno entre dos vectores."""
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+
+def recommendation_view(request):
+    """Vista para el sistema de recomendación basado en embeddings."""
+    context = {
+        'search_prompt': '',
+        'recommended_movie': None,
+        'similarity_score': None,
+        'error_message': None
+    }
+    
+    if request.method == 'POST':
+        search_prompt = request.POST.get('search_prompt', '').strip()
+        context['search_prompt'] = search_prompt
+        
+        if search_prompt:
+            try:
+                # Cargar la API Key de OpenAI
+                load_dotenv('openAI.env')
+                client = OpenAI(api_key=os.environ.get('openai_apikey'))
+                
+                # Generar embedding del prompt
+                response = client.embeddings.create(
+                    input=[search_prompt],
+                    model="text-embedding-3-small"
+                )
+                prompt_emb = np.array(response.data[0].embedding, dtype=np.float32)
+                
+                # Recorrer la base de datos y comparar similitudes
+                best_movie = None
+                max_similarity = -1
+                
+                for movie in Movie.objects.all():
+                    # Convertir el embedding almacenado de bytes a numpy array
+                    movie_emb = np.frombuffer(movie.emb, dtype=np.float32)
+                    similarity = cosine_similarity(prompt_emb, movie_emb)
+                    
+                    if similarity > max_similarity:
+                        max_similarity = similarity
+                        best_movie = movie
+                
+                if best_movie:
+                    context['recommended_movie'] = best_movie
+                    context['similarity_score'] = round(max_similarity * 100, 2)  # Convertir a porcentaje
+                else:
+                    context['error_message'] = "No se encontraron películas en la base de datos."
+                    
+            except Exception as e:
+                context['error_message'] = f"Error al procesar la búsqueda: {str(e)}"
+        else:
+            context['error_message'] = "Por favor ingresa una descripción para buscar películas."
+    
+    return render(request, 'recommendation.html', context)
