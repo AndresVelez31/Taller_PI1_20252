@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="recommendation-card">
+                <div class="card-header-custom">
+                    <div class="header-icon">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <h2 class="text-center mb-0">Sistema de Recomendación de Películas</h2>
+                    <p class="subtitle">Encuentra tu próxima película favorita con inteligencia artificial</p>
+                </div>
+                <div class="card-body-custom">
+                    <p class="description-text">
+                        Describe el tipo de película que buscas y te recomendaremos la más similar de nuestra base de datos
+                    </p>
+                    
+                    <form method="post" class="search-form">
+                        {% csrf_token %}
+                        <div class="form-group-custom">
+                            <label for="search_prompt" class="form-label-custom">¿Qué tipo de película buscas?</label>
+                            <div class="textarea-wrapper">
+                                <textarea 
+                                    class="form-control-enhanced" 
+                                    id="search_prompt" 
+                                    name="search_prompt" 
+                                    rows="3" 
+                                    placeholder="Ejemplo: película de la segunda guerra mundial, comedia romántica, thriller psicológico..."
+                                    required>{{ search_prompt }}</textarea>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn-search-enhanced">
+                                <i class="fas fa-search me-2"></i>Buscar Recomendación
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if error_message %}
+                        <div class="alert-enhanced alert-danger-enhanced mt-4" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>{{ error_message }}
+                        </div>
+                    {% endif %}
+
+                    {% if recommended_movie %}
+                        <div class="results-section mt-4">
+                            <div class="alert-enhanced alert-success-enhanced" role="alert">
+                                <div class="success-header">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-star me-2"></i>¡Película Recomendada!
+                                    </h5>
+                                    <div class="similarity-badge">{{ similarity_score }}% similitud</div>
+                                </div>
+                                <hr class="alert-divider">
+                                <p class="mb-0 search-reference">Basado en tu búsqueda: <em>"{{ search_prompt }}"</em></p>
+                            </div>
+                            
+                            <div class="movie-card-enhanced mt-3">
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        <div class="movie-poster-wrapper">
+                                            {% if recommended_movie.image %}
+                                                <img src="{{ recommended_movie.image.url }}" 
+                                                     class="movie-poster-img" 
+                                                     alt="{{ recommended_movie.title }}">
+                                            {% else %}
+                                                <div class="no-poster">
+                                                    <i class="fas fa-film"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="movie-info">
+                                            <div class="movie-title-section">
+                                                <h5 class="movie-title">{{ recommended_movie.title }}</h5>
+                                                {% if recommended_movie.year %}
+                                                    <span class="movie-year-badge">{{ recommended_movie.year }}</span>
+                                                {% endif %}
+                                            </div>
+                                            {% if recommended_movie.genre %}
+                                                <div class="movie-genre-section">
+                                                    <small class="genre-label">Género:</small>
+                                                    <span class="genre-value">{{ recommended_movie.genre }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <p class="movie-description">{{ recommended_movie.description }}</p>
+                                            {% if recommended_movie.url %}
+                                                <a href="{{ recommended_movie.url }}" 
+                                                   class="btn-info-enhanced" 
+                                                   target="_blank">
+                                                    <i class="fas fa-external-link-alt me-1"></i>Ver más información
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'home' %}" class="btn-back-enhanced">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mejoras visuales sutiles */
+.recommendation-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: none;
+    transition: transform 0.3s ease;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+.card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    border-bottom: none;
+}
+
+.header-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.card-header-custom h2 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    opacity: 0.9;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.card-body-custom {
+    padding: 2rem;
+}
+
+.description-text {
+    color: #6c757d;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+}
+
+.form-group-custom {
+    margin-bottom: 1.5rem;
+}
+
+.form-label-custom {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.form-label-custom::before {
+    content: '✨';
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+.textarea-wrapper {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.form-control-enhanced {
+    width: 100%;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.2rem;
+    font-size: 1.05rem;
+    font-family: inherit;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    resize: vertical;
+    min-height: 120px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.form-control-enhanced:focus {
+    outline: none;
+    border-color: #667eea;
+    background-color: #ffffff;
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.06),
+        0 0 0 0.2rem rgba(102, 126, 234, 0.15),
+        0 4px 12px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-control-enhanced::placeholder {
+    color: #8e9aaf;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.form-control-enhanced:hover:not(:focus) {
+    border-color: #c5c9d6;
+    background-color: #ffffff;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.btn-search-enhanced {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-search-enhanced:hover {
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.alert-enhanced {
+    border: none;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.alert-success-enhanced {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-danger-enhanced {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1b5bb 100%);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.success-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.similarity-badge {
+    background: #28a745;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.alert-divider {
+    border-color: #c3e6cb;
+    opacity: 0.5;
+}
+
+.search-reference {
+    font-style: italic;
+    color: #6c757d;
+}
+
+.movie-card-enhanced {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.movie-card-enhanced:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.movie-poster-wrapper {
+    height: 100%;
+    min-height: 300px;
+}
+
+.movie-poster-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-poster {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 3rem;
+}
+
+.movie-info {
+    padding: 2rem;
+}
+
+.movie-title-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.movie-title {
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.movie-year-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 1rem;
+}
+
+.movie-genre-section {
+    margin-bottom: 1rem;
+}
+
+.genre-label {
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.genre-value {
+    color: #495057;
+    margin-left: 0.5rem;
+}
+
+.movie-description {
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.btn-info-enhanced {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-info-enhanced:hover {
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.btn-back-enhanced {
+    background: #6c757d;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-back-enhanced:hover {
+    color: white;
+    background: #545b62;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .recommendation-card {
+        margin: 1rem;
+    }
+    
+    .card-header-custom,
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+    
+    .movie-info {
+        padding: 1.5rem;
+    }
+    
+    .movie-title-section {
+        flex-direction: column;
+    }
+    
+    .movie-year-badge {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        align-self: flex-start;
+    }
+    
+    .success-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
